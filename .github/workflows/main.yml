@@ -1,4 +1,4 @@
-name: HomeRemotePlus Production Build
+name: HomeRemote+ Automated APK Builder
 
 on:
   push:
@@ -7,47 +7,107 @@ on:
 
 jobs:
   build:
+    name: Build HomeRemote+ Android APK
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout Repository Code
       uses: actions/checkout@v4
 
-    - name: Decompress Source Code
+    - name: Clean Download Suffixes and Decompress Source
       run: |
-        if [ -f "HomeRemotePlus-v1.1.zip" ]; then
-          echo "Unzipping HomeRemotePlus-v1.1.zip..."
-          unzip -o HomeRemotePlus-v1.1.zip
-        elif [ -f "project.zip" ]; then
-          unzip -o project.zip
+        echo "=== Sanitizing uploaded filenames ==="
+        # 1. Clean up duplicated browser download suffixes like " (1)", " (2)", " (1) (1)"
+        for f in *" ("*")"*; do
+          [ -f "$f" ] || continue
+          clean=$(echo "$f" | sed -E 's/ \([0-9]+\)//g')
+          echo "Sanitizing: '$f' -> '$clean'"
+          mv "$f" "$clean" 2>/dev/null || true
+        done
+
+        # 2. Find and extract ANY uploaded zip archive
+        ZIP_FILE=$(find . -maxdepth 2 -type f -name "*.zip" | head -n 1)
+        if [ -n "$ZIP_FILE" ] && [ -f "$ZIP_FILE" ]; then
+          echo "Found zip archive: $ZIP_FILE. Extracting..."
+          unzip -o "$ZIP_FILE"
         fi
 
-    - name: Normalize Project Tree
-      run: |
-        INNER_DIR=$(find . -maxdepth 3 -type f -name "settings.gradle.kts" -print -quit)
-        if [ ! -z "$INNER_DIR" ] && [ "$INNER_DIR" != "./settings.gradle.kts" ]; then
-          TARGET_DIR=$(dirname "$INNER_DIR")
-          echo "Normalizing pathways from $TARGET_DIR..."
-          cp -rn $TARGET_DIR/* . 2>/dev/null || true
-          cp -rn $TARGET_DIR/.* . 2>/dev/null || true
+        # 3. Handle nested root if extracted into subfolder
+        INNER_SETTINGS=$(find . -maxdepth 3 -type f -name "settings.gradle.kts" -not -path "./settings.gradle.kts" -print -quit)
+        if [ -n "$INNER_SETTINGS" ]; then
+          INNER_ROOT=$(dirname "$INNER_SETTINGS")
+          echo "Moving contents from nested directory $INNER_ROOT to root..."
+          cp -rf "$INNER_ROOT"/* . 2>/dev/null || true
         fi
 
-    - name: Set up JDK 17
+        # 4. Fallback reorganization if files are flat in root
+        if [ ! -d "app/src/main/java" ]; then
+          echo "Reorganizing loose files into standard Android project tree..."
+          mkdir -p app/src/main/java/com/glassremote/{data/{adb,bluetooth,connection,haptics,intent,ir,macro,media,network,repository,security,stb},di,domain/{model,repository,usecase},ui/{dashboard,macros,pairing,remote,settings,theme}}
+          mkdir -p app/src/main/proto
+          mkdir -p app/src/main/res/{drawable,layout,mipmap-anydpi-v26,values}
+
+          [ -f "pairing.proto" ] && mv pairing.proto app/src/main/proto/ || true
+          [ -f "remote.proto" ] && mv remote.proto app/src/main/proto/ || true
+          [ -f "activity_main.xml" ] && mv activity_main.xml app/src/main/res/layout/ || true
+          [ -f "ic_launcher.xml" ] && mv ic_launcher.xml app/src/main/res/mipmap-anydpi-v26/ || true
+          [ -f "ic_launcher_foreground.xml" ] && mv ic_launcher_foreground.xml app/src/main/res/drawable/ || true
+          [ -f "ic_launcher_background.xml" ] && mv ic_launcher_background.xml app/src/main/res/drawable/ || true
+          [ -f "strings.xml" ] && mv strings.xml app/src/main/res/values/ || true
+
+          find . -maxdepth 1 -name "*.kt" -exec grep -l "package com.glassremote.data.connection" {} + 2>/dev/null | xargs -I {} mv {} app/src/main/java/com/glassremote/data/connection/ 2>/dev/null || true
+          find . -maxdepth 1 -name "*.kt" -exec grep -l "package com.glassremote.data.media" {} + 2>/dev/null | xargs -I {} mv {} app/src/main/java/com/glassremote/data/media/ 2>/dev/null || true
+          find . -maxdepth 1 -name "*.kt" -exec grep -l "package com.glassremote.data.intent" {} + 2>/dev/null | xargs -I {} mv {} app/src/main/java/com/glassremote/data/intent/ 2>/dev/null || true
+          find . -maxdepth 1 -name "*.kt" -exec grep -l "package com.glassremote.data.stb" {} + 2>/dev/null | xargs -I {} mv {} app/src/main/java/com/glassremote/data/stb/ 2>/dev/null || true
+          find . -maxdepth 1 -name "*.kt" -exec grep -l "package com.glassremote.data.adb" {} + 2>/dev/null | xargs -I {} mv {} app/src/main/java/com/glassremote/data/adb/ 2>/dev/null || true
+          find . -maxdepth 1 -name "*.kt" -exec grep -l "package com.glassremote.data.bluetooth" {} + 2>/dev/null | xargs -I {} mv {} app/src/main/java/com/glassremote/data/bluetooth/ 2>/dev/null || true
+          find . -maxdepth 1 -name "*.kt" -exec grep -l "package com.glassremote.data.haptics" {} + 2>/dev/null | xargs -I {} mv {} app/src/main/java/com/glassremote/data/haptics/ 2>/dev/null || true
+          find . -maxdepth 1 -name "*.kt" -exec grep -l "package com.glassremote.data.ir" {} + 2>/dev/null | xargs -I {} mv {} app/src/main/java/com/glassremote/data/ir/ 2>/dev/null || true
+          find . -maxdepth 1 -name "*.kt" -exec grep -l "package com.glassremote.data.macro" {} + 2>/dev/null | xargs -I {} mv {} app/src/main/java/com/glassremote/data/macro/ 2>/dev/null || true
+          find . -maxdepth 1 -name "*.kt" -exec grep -l "package com.glassremote.data.network" {} + 2>/dev/null | xargs -I {} mv {} app/src/main/java/com/glassremote/data/network/ 2>/dev/null || true
+          find . -maxdepth 1 -name "*.kt" -exec grep -l "package com.glassremote.data.repository" {} + 2>/dev/null | xargs -I {} mv {} app/src/main/java/com/glassremote/data/repository/ 2>/dev/null || true
+          find . -maxdepth 1 -name "*.kt" -exec grep -l "package com.glassremote.data.security" {} + 2>/dev/null | xargs -I {} mv {} app/src/main/java/com/glassremote/data/security/ 2>/dev/null || true
+          find . -maxdepth 1 -name "*.kt" -exec grep -l "package com.glassremote.di" {} + 2>/dev/null | xargs -I {} mv {} app/src/main/java/com/glassremote/di/ 2>/dev/null || true
+          find . -maxdepth 1 -name "*.kt" -exec grep -l "package com.glassremote.domain.model" {} + 2>/dev/null | xargs -I {} mv {} app/src/main/java/com/glassremote/domain/model/ 2>/dev/null || true
+          find . -maxdepth 1 -name "*.kt" -exec grep -l "package com.glassremote.domain.repository" {} + 2>/dev/null | xargs -I {} mv {} app/src/main/java/com/glassremote/domain/repository/ 2>/dev/null || true
+          find . -maxdepth 1 -name "*.kt" -exec grep -l "package com.glassremote.domain.usecase" {} + 2>/dev/null | xargs -I {} mv {} app/src/main/java/com/glassremote/domain/usecase/ 2>/dev/null || true
+          find . -maxdepth 1 -name "*.kt" -exec grep -l "package com.glassremote.ui.dashboard" {} + 2>/dev/null | xargs -I {} mv {} app/src/main/java/com/glassremote/ui/dashboard/ 2>/dev/null || true
+          find . -maxdepth 1 -name "*.kt" -exec grep -l "package com.glassremote.ui.macros" {} + 2>/dev/null | xargs -I {} mv {} app/src/main/java/com/glassremote/ui/macros/ 2>/dev/null || true
+          find . -maxdepth 1 -name "*.kt" -exec grep -l "package com.glassremote.ui.pairing" {} + 2>/dev/null | xargs -I {} mv {} app/src/main/java/com/glassremote/ui/pairing/ 2>/dev/null || true
+          find . -maxdepth 1 -name "*.kt" -exec grep -l "package com.glassremote.ui.remote" {} + 2>/dev/null | xargs -I {} mv {} app/src/main/java/com/glassremote/ui/remote/ 2>/dev/null || true
+          find . -maxdepth 1 -name "*.kt" -exec grep -l "package com.glassremote.ui.settings" {} + 2>/dev/null | xargs -I {} mv {} app/src/main/java/com/glassremote/ui/settings/ 2>/dev/null || true
+          find . -maxdepth 1 -name "*.kt" -exec grep -l "package com.glassremote.ui.theme" {} + 2>/dev/null | xargs -I {} mv {} app/src/main/java/com/glassremote/ui/theme/ 2>/dev/null || true
+          [ -f "MainActivity.kt" ] && mv MainActivity.kt app/src/main/java/com/glassremote/ 2>/dev/null || true
+          [ -f "GlassRemoteApp.kt" ] && mv GlassRemoteApp.kt app/src/main/java/com/glassremote/ 2>/dev/null || true
+          [ -f "AndroidManifest.xml" ] && mv AndroidManifest.xml app/src/main/ 2>/dev/null || true
+        fi
+
+        echo "=== Directory Structure Verified ==="
+        ls -la
+        [ -f "settings.gradle.kts" ] && echo "settings.gradle.kts found!" || echo "WARNING: settings.gradle.kts not found"
+
+    - name: Set up Java 17 (JDK)
       uses: actions/setup-java@v4
       with:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Generate Gradle Wrapper
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
+
+    - name: Generate Wrapper if Missing
       run: |
-        gradle wrapper --gradle-version 8.9
+        if [ ! -f "gradlew" ]; then
+          gradle wrapper --gradle-version 8.9
+        fi
         chmod +x gradlew
 
-    - name: Build Standalone APK
+    - name: Assemble Debug APK
       run: ./gradlew assembleDebug --stacktrace
 
-    - name: Upload Finished APK
+    - name: Upload Finished APK Artifact
       uses: actions/upload-artifact@v4
       with:
         name: HomeRemotePlus-v1.1-APK
         path: app/build/outputs/apk/debug/*.apk
+        retention-days: 14
