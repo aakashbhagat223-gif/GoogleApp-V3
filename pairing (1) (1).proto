@@ -1,0 +1,65 @@
+syntax = "proto2";
+package glassremote.pairing;
+option java_package = "com.glassremote.proto.pairing";
+option java_outer_classname = "PairingProto";
+option java_multiple_files = true;
+
+// Android TV Remote protocol v2, pairing channel (TCP 6467, mutual TLS).
+// Field numbers follow the community reverse-engineered definitions.
+
+enum PairingStatus {
+  STATUS_UNKNOWN = 0;
+  STATUS_OK = 200;
+  STATUS_ERROR = 400;
+  STATUS_BAD_CONFIGURATION = 401;
+  STATUS_BAD_SECRET = 402;
+}
+
+enum PairingEncodingType {
+  ENCODING_UNKNOWN = 0;
+  ENCODING_ALPHANUMERIC = 1;
+  ENCODING_NUMERIC = 2;
+  ENCODING_HEXADECIMAL = 3;
+  ENCODING_QRCODE = 4;
+}
+
+enum PairingRole {
+  ROLE_UNKNOWN = 0;
+  ROLE_INPUT = 1;
+  ROLE_OUTPUT = 2;
+}
+
+message PairingRequest {
+  optional string service_name = 1;
+  optional string client_name = 2;
+}
+message PairingRequestAck { optional string server_name = 1; }
+
+message PairingEncoding {
+  optional PairingEncodingType type = 1;
+  optional uint32 symbol_length = 2;
+}
+message PairingOption {
+  repeated PairingEncoding input_encodings = 1;
+  repeated PairingEncoding output_encodings = 2;
+  optional PairingRole preferred_role = 3;
+}
+message PairingConfiguration {
+  optional PairingEncoding encoding = 1;
+  optional PairingRole client_role = 2;
+}
+message PairingConfigurationAck {}
+message PairingSecret { optional bytes secret = 1; }
+message PairingSecretAck { optional bytes secret = 1; }
+
+message PairingMessage {
+  optional int32 protocol_version = 1;
+  optional PairingStatus status = 2;
+  optional PairingRequest pairing_request = 10;
+  optional PairingRequestAck pairing_request_ack = 11;
+  optional PairingOption pairing_option = 20;
+  optional PairingConfiguration pairing_configuration = 30;
+  optional PairingConfigurationAck pairing_configuration_ack = 31;
+  optional PairingSecret pairing_secret = 40;
+  optional PairingSecretAck pairing_secret_ack = 41;
+}

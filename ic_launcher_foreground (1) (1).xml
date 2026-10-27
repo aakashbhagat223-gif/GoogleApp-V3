@@ -1,0 +1,60 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Remote Control Silhouette Body -->
+    <path
+        android:fillColor="#1E2333"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.8"
+        android:strokeAlpha="0.3"
+        android:pathData="M38,18 H70 A12,12 0 0 1 82,30 V78 A12,12 0 0 1 70,90 H38 A12,12 0 0 1 26,78 V30 A12,12 0 0 1 38,18 Z" />
+
+    <!-- Power Button Indicator -->
+    <path
+        android:fillColor="#F87171"
+        android:pathData="M67,26 A3,3 0 1 1 67,25.99 Z" />
+
+    <!-- Status / IR Emitter Notch -->
+    <path
+        android:fillColor="#60A5FA"
+        android:pathData="M49,21 H59 V23 H49 Z" />
+
+    <!-- Directional Pad Outer Circle -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2.2"
+        android:strokeAlpha="0.85"
+        android:pathData="M54,34 A14,14 0 1 1 53.99,34 Z" />
+
+    <!-- Center OK Dot -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,45 A4,4 0 1 1 53.99,45 Z" />
+
+    <!-- Volume & Channel Dual Pill Slits -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.6"
+        android:pathData="M37,65 H45 V77 H37 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.6"
+        android:pathData="M63,65 H71 V77 H63 Z" />
+
+    <!-- Center Navigation Pill -->
+    <path
+        android:fillColor="#38BDF8"
+        android:pathData="M50,68 H58 V74 H50 Z" />
+
+    <!-- Minimal Home/Back Indicator Dots -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.4"
+        android:pathData="M46,83 A2,2 0 1 1 46,82.99 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.4"
+        android:pathData="M62,83 A2,2 0 1 1 62,82.99 Z" />
+</vector>
